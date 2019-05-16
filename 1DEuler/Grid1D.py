@@ -50,6 +50,8 @@ f1 = np.zeros((N,3))
 f1eq = np.zeros((N,3))
 f2 = np.zeros((N,3))
 f2eq = np.zeros((N,3))
+f3 = np.zeros((N,3))
+f3eq = np.zeros((N,3))
 E = np.zeros(N)
 
 
@@ -69,14 +71,18 @@ G[:,0] = np.multiply(rho,u)
 G[:,1] = p + np.multiply(rho, u, u)
 G[:,2] = np.multiply(p, u) + np.multiply(rho,u, E)
 
-f1eq[:,0] = U[:,0]/2.0 - G[:,0]/(2.0*Lambda)
-f1eq[:,1] = U[:,1]/2.0 - G[:,1]/(2.0*Lambda)
-f1eq[:,2] = U[:,2]/2.0 - G[:,2]/(2.0*Lambda)
 
-f2eq[:,0] = U[:,0]/2.0 + G[:,0]/(2.0*Lambda)
-f2eq[:,1] = U[:,1]/2.0 + G[:,1]/(2.0*Lambda)
-f2eq[:,2] = U[:,2]/2.0 + G[:,2]/(2.0*Lambda)
+for i in range(0,3):
+    f1eq[:,i] = U[:,i]/3.0 - G[:,i]/(2.0*Lambda)
+    #f1eq[:,1] = U[:,1]/2.0 - G[:,1]/(2.0*Lambda)
+    #f1eq[:,2] = U[:,2]/2.0 - G[:,2]/(2.0*Lambda)
+for i in range(0,3):
+    f2eq[:,i] = U[:,i]/3.0 + G[:,i]/(2.0*Lambda)
+    #f2eq[:,1] = U[:,1]/2.0 + G[:,1]/(2.0*Lambda)
+    #f2eq[:,2] = U[:,2]/2.0 + G[:,2]/(2.0*Lambda)
 
+for i in range(0,3):
+    f2eq[:,i] = U[:,i]/3.0
 
 print("lambda=", Lambda)    
 
