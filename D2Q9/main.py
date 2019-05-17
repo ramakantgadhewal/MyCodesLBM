@@ -12,47 +12,34 @@ Some important formulas:
         feq_i = w_i*{3*[(e_i.u)/Lambda] + (9/2)*[(e_i.u)^2/Lambda^2] - (3/2)*[(e_i.u)/Lambda^2]}        
 """
 
-def WallBcOnGridBounceBack(f):
-    #bottom wall
-    f[5,0] = f[7,0]
-    f[2,0] = f[4,0]
-    f[6,0] = f[8,0]
-    
-    #left wall 
-    f[8,:,0] = f[6,:,0]
-    f[1,:,0] = f[3,:,0]
-    f[5,:,0] = f[7,:,0]
-    
-    #right wall
-    f[6,:,-1] = f[8,:,-1]
-    f[3,:,-1] = f[1,:,-1]
-    f[7,:,-1] = f[7,:,-1]
-    
 
-def MovingWallBcOnGridBounceBack(f, Uwall):    
-    '''implemented from Q. Zou, X.He: Physc Fluids, 1997'''
-    rhoN = f[0,-1,:]+f[2,-1,:]+f[3,-1,:]+2*(f[2,-1,:]+f[6,-1,:]+f[5,-1,:])
-    f[4,-1,:] = f[2,-1,:]
-    f[7,-1,:] = f[5,-1,:] + 0.5*(f[1,-1,:]-f[3,-1,:])-0.5*rhoN*Uwall
-    f[8,-1,:] = f[6,-1,:] + 0.5*(f[3,-1,:]-f[1,-1,:])+0.5*rhoN*Uwall
     
        
 import numpy as np
 import D2Q9
+import BCs
 
 Nx = 5; Ny = 5;
 D = 2
 Q = 9
+Ma = 0.1
+a = 1/3**0.5
 Re = 100
-nu = 0.03
+kn = Ma/Re
+RefLen = 1.0
+UtopWall = Ma*a
+nu = (RefLen*UtopWall)/Re
 dx = 1.0
-dt = 1.0
-Lambda = 1.0;
+dt = RefLen/Nx
 tau = (6.0*nu+1.0)/2.0
+tauNdim = tau/dt
+beta = 1.0/(2.0*tauNdim+1.0)
+Lambda = 1.0;
 
 rho_ini = 1.0;
 u_ini = 0.0
 v_ini = 0.0
+
 
 #initialization of arrays required 
 rho = np.zeros((Nx, Ny))
@@ -82,14 +69,14 @@ f.fill(1.0)
 #CalEqbDistrFun(vel, Q, Lambda, feq)
 
 iter=0
-while(iter<10):
+while(iter<1):
     iter = iter+1
     print(iter)
     
     fnew = f - (1/tau)*(f-feq)
     f = fnew
-    WallBcOnGridBounceBack(f)
-    MovingWallBcOnGridBounceBack(f,0.5)
+    BCs.WallBcOnGridBounceBack(f)
+    BCs.MovingWallBcOnGridBounceBack(f,0.5)
     D2Q9.GetDenFromFeq(feq)
     D2Q9.GetVelFromFeq(feq, vel)
     
