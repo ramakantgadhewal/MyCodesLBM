@@ -42,7 +42,7 @@ def MovingWallBcOnGridBounceBack(PrimVar, Grid, Uwall, c, w, feq):
     PrimVar[2] = 0.0
     
     D2Q9.CalEqbDistrFun(PrimVar, feq, c, w)
-    
+    #print(PrimVar,feq)
     denominator = np.zeros(np.shape((feq[0, :, -1])))
     factor = np.zeros(np.shape((Grid[0, :, -1])))
     denominator =1.0/(feq[7, 2:-2, -2]+feq[4, 2:-2, -1]+feq[8, 2:-2, -2])

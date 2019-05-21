@@ -13,16 +13,18 @@ Some important formulas:
 """
 
 def Collision(beta, c, tau, Grid, PrimVar, feq):
+    #print("grid", np.shape(Grid), np.shape(feq), np.shape(PrimVar))
     D2Q9.GetMoments(c, Grid, PrimVar)
     D2Q9.CalEqbDistrFun(PrimVar, feq, c, w)
     
     alpha = 2.0
     for i in range(9):
-        Grid[i, 1:-1, 1:-1]+=alpha*beta*(feq[i, 1:-1, 1:-1]-Grid[i, 1:-1, 1:-1])
+        Grid[i]+=alpha*beta*(feq[i]-Grid[i])
     
       
     
 def PrepareWall(Grid):
+   # print("grid", np.shape(Grid), np.shape(feq), np.shape(PrimVar))
     #copy from right wall to the right ghost
     Grid[:,-1,:] = Grid[:,-2,:]
     
@@ -37,20 +39,21 @@ def PrepareWall(Grid):
     
 def Advection(Grid):
     
-    lenx, leny = np.shape(Grid[0])
+    len0, lenx, leny = np.shape(Grid)
+    
     for j in range(1, leny-1):
         for i in range(1, lenx-1):
-            Grid[3,i,j] = Grid[3,i+1,j]        
-            Grid[4,i,j] = Grid[4,i,j+1]        
-            Grid[7,i,j] = Grid[7,i+1,j+1]        
-            Grid[8,i,j] = Grid[8,i-1,j+1]        
+            Grid[3, i, j] = Grid[3, i+1, j]        
+            Grid[4, i, j] = Grid[4, i, j+1]        
+            Grid[7, i, j] = Grid[7, i+1, j+1]        
+            Grid[8, i, j] = Grid[8, i-1, j+1]        
             
     for j in range(leny-2, 0, -1):
         for i in range(lenx-2, 0, -1):        
-            Grid[1,i,j] = Grid[1,i-1,j]        
-            Grid[2,i,j] = Grid[2,i,j-1]        
-            Grid[5,i,j] = Grid[5,i-1,j-1]        
-            Grid[6,i,j] = Grid[8,i+1,j-1]      
+            Grid[1, i, j] = Grid[1, i-1, j]        
+            Grid[2, i, j] = Grid[2, i, j-1]        
+            Grid[5, i, j] = Grid[5, i-1, j-1]        
+            Grid[6, i, j] = Grid[6, i+1, j-1]      
         
     
            
@@ -110,31 +113,34 @@ PrimVar[2, 1:-1, 1:-1] = v_ini
 
 ######First iteration#####
 D2Q9.CalEqbDistrFun(PrimVar, feq, c, w)
-Grid=feq
-Collision(beta, c, tau, Grid, PrimVar, feq)
-PrepareWall(Grid)
-Advection(Grid)
-BCs.WallBcOnGridBounceBack(Grid)
-BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
-BCs.BcOnCorners(Grid, feq)
+Grid[:, 1:-1, 1:-1] = feq[:, 1:-1, 1:-1]
+#Collision(beta, c, tau, Grid[:, 1:-1, 1:-1], PrimVar[:, 1:-1, 1:-1], 
+#          feq[:, 1:-1, 1:-1])
+#PrepareWall(Grid)
+#Advection(Grid)
+#BCs.WallBcOnGridBounceBack(Grid)
+#BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
+#BCs.BcOnCorners(Grid, feq)
 
 
 iter=0
-#while(iter<int(SimulTime)):
+while(iter<int(SimulTime)):
 #while(iter<int(10000)):
-#    iter = iter+1
-#    print(iter)
-#    
-#    Collision(beta, c, tau, Grid, PrimVar, feq)
-#    PrepareWall(Grid)
-#    Advection(Grid)
-#    BCs.WallBcOnGridBounceBack(Grid)
-#    BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
-#    BCs.BcOnCorners(Grid, feq)
+    iter = iter+1
+    print(iter)
+    
+    Collision(beta, c, tau, Grid[:, 1:-1, 1:-1], PrimVar[:, 1:-1, 1:-1], 
+          feq[:, 1:-1, 1:-1])
+    PrepareWall(Grid)
+    Advection(Grid)
+    BCs.WallBcOnGridBounceBack(Grid)
+    BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
+    BCs.BcOnCorners(Grid, feq)
 
 #to plot contours of normal velocity
 
-print (PrimVar[1, 1:-1, 1:-1], PrimVar[2, 1:-1, 1:-1])
+print ("printing u-vel", PrimVar[1, 1:-1, 1:-1], "printing v-vel", PrimVar[2, 1:-1, 1:-1])
+
 x = np.linspace(1, Nx, Nx)    
 y = np.linspace(1, Ny, Ny)    
 X, Y = np.meshgrid(x, y)

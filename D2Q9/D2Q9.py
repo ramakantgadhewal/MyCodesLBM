@@ -8,15 +8,23 @@ Created on Fri May 17 10:27:01 2019
 
 import numpy as np
 
+#def CalEqbDistrFun(PrimVar, feq, c, w):
+#      for i in range(9):
+#          UdotC = c[0][i]*PrimVar[1, 1:-1, 1:-1]+c[1][i]*PrimVar[2, 1:-1, 1:-1]
+#          Usq = PrimVar[1, 1:-1, 1:-1]*PrimVar[1, 1:-1, 1:-1]+PrimVar[2, 1:-1, 
+#                       1:-1]*PrimVar[2, 1:-1, 1:-1]
+#       
+#          feq[i, 1:-1, 1:-1] = w[i]*PrimVar[0, 1:-1, 1:-1]*(1.0 + 3.0*UdotC - 
+#             1.5*Usq + 4.5*UdotC**2 + 4.5*UdotC**3 - 4.5*Usq*UdotC )
+
 def CalEqbDistrFun(PrimVar, feq, c, w):
       for i in range(9):
-          UdotC = c[0][i]*PrimVar[1, 1:-1, 1:-1]+c[1][i]*PrimVar[2, 1:-1, 1:-1]
-          Usq = PrimVar[1, 1:-1, 1:-1]*PrimVar[1, 1:-1, 1:-1]+PrimVar[2, 1:-1, 
-                       1:-1]*PrimVar[2, 1:-1, 1:-1]
+          UdotC = c[0][i]*PrimVar[1]+c[1][i]*PrimVar[2]
+          Usq = PrimVar[1]*PrimVar[1]+PrimVar[2]*PrimVar[2]
        
-          feq[i, 1:-1, 1:-1] = w[i]*PrimVar[0, 1:-1, 1:-1]*(1.0 + 3.0*UdotC - 
+          feq[i] = w[i]*PrimVar[0]*(1.0 + 3.0*UdotC - 
              1.5*Usq + 4.5*UdotC**2 + 4.5*UdotC**3 - 4.5*Usq*UdotC )
-
+          
 #def GetDenFromFeq(feq_mom):
 #    '''Thin function computes density (rho) by taking equlibrium distribution fun-
 #    ction (feq) as an input'''
@@ -42,19 +50,18 @@ def CalEqbDistrFun(PrimVar, feq, c, w):
     
 def GetMoments(c, Grid, PrimVar):
     
-    PrimVar[:, 1:-1, 1:-1] = 0.0
+    vel1=np.zeros(np.shape(PrimVar[1]))
+    vel2=np.zeros(np.shape(PrimVar[2]))
     
-    vel1=np.zeros(np.shape(PrimVar[1, 1:-1, 1:-1]))
-    vel2=np.zeros(np.shape(PrimVar[2, 1:-1, 1:-1]))
-    
-    PrimVar[0, 1:-1, 1:-1] = Grid[:, 1:-1, 1:-1].sum(axis=0)
+    PrimVar[0] = Grid.sum(axis=0)
     
     for i in range(9):
-        vel1+=Grid[i, 1:-1, 1:-1]*c[0][i]
-        vel2+=Grid[i, 1:-1, 1:-1]*c[1][i]
+        vel1+=Grid[i]*c[0][i]
+        vel2+=Grid[i]*c[1][i]
  
-    PrimVar[1, 1:-1, 1:-1] = vel1
-    PrimVar[2, 1:-1, 1:-1] = vel2
+    PrimVar[1] = vel1/PrimVar[0]
+    PrimVar[2] = vel2/PrimVar[0]
+    #print("printing in GetMoments",PrimVar)
     
     
     
