@@ -12,29 +12,81 @@ Some important formulas:
         feq_i = w_i*{3*[(e_i.u)/Lambda] + (9/2)*[(e_i.u)^2/Lambda^2] - (3/2)*[(e_i.u)/Lambda^2]}        
 """
 
-
+def Collision(beta, c, tau, Grid, PrimVar, feq):
+    D2Q9.GetMoments(c, Grid, PrimVar)
+    D2Q9.CalEqbDistrFun(PrimVar, feq, c, w)
     
-       
+    alpha = 2.0
+    for i in range(9):
+        Grid[i, 1:-1, 1:-1]+=alpha*beta*(feq[i, 1:-1, 1:-1]-Grid[i, 1:-1, 1:-1])
+    
+      
+    
+def PrepareWall(Grid):
+    #copy from right wall to the right ghost
+    Grid[:,-1,:] = Grid[:,-2,:]
+    
+    #copy from left wall to the left ghost
+    Grid[:,0,:] = Grid[:,1,:]
+    
+    #copy from bottom wall to the bottom ghost
+    Grid[:,:,-1] = Grid[:,:,-2]
+    
+    #copy from top wall to the top ghost
+    Grid[:,:,0] = Grid[:,:,1]
+    
+def Advection(Grid):
+    
+    lenx, leny = np.shape(Grid[0])
+    for j in range(1, leny-1):
+        for i in range(1, lenx-1):
+            Grid[3,i,j] = Grid[3,i+1,j]        
+            Grid[4,i,j] = Grid[4,i,j+1]        
+            Grid[7,i,j] = Grid[7,i+1,j+1]        
+            Grid[8,i,j] = Grid[8,i-1,j+1]        
+            
+    for j in range(leny-2, 0, -1):
+        for i in range(lenx-2, 0, -1):        
+            Grid[1,i,j] = Grid[1,i-1,j]        
+            Grid[2,i,j] = Grid[2,i,j-1]        
+            Grid[5,i,j] = Grid[5,i-1,j-1]        
+            Grid[6,i,j] = Grid[8,i+1,j-1]      
+        
+    
+           
 import numpy as np
+import matplotlib.pyplot as plt
 import D2Q9
 import BCs
 
-Nx = 5; Ny = 5;
+c = np.array([[0.0, 1.0, 0.0, -1.0, 0.0, 1.0, -1.0, -1.0, 1.0], [0.0, 0.0, 
+                  1.0, 0.0, -1.0, 1.0, 1.0, -1.0, -1.0]])
+w = np.array([4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 
+                  1.0/36.0, 1.0/36.0, 1.0/36.0])
+
+    
+Nx = 96; Ny = 96;
+GhostX = 2
+GhostY = 2
+TotNx = Nx + GhostX
+TotNy = Ny + GhostY
 D = 2
 Q = 9
 Ma = 0.1
 a = 1/3**0.5
-Re = 100
+Re = 2000
 kn = Ma/Re
 RefLen = 1.0
 UtopWall = Ma*a
 nu = (RefLen*UtopWall)/Re
 dx = 1.0
 dt = RefLen/Nx
-tau = (6.0*nu+1.0)/2.0
+tau = 3.0*nu
 tauNdim = tau/dt
 beta = 1.0/(2.0*tauNdim+1.0)
 Lambda = 1.0;
+
+SimulTime = (60*Nx)/UtopWall
 
 rho_ini = 1.0;
 u_ini = 0.0
@@ -42,42 +94,52 @@ v_ini = 0.0
 
 
 #initialization of arrays required 
-rho = np.zeros((Nx, Ny))
-x = np.zeros((D, Nx, Ny))
-vel = np.zeros((D, Nx, Ny))
-feq = np.zeros((Q, Nx, Ny))
-f = np.zeros((Q, Nx, Ny))
+
+Grid = np.zeros((Q, TotNx, TotNx))
+PrimVar = np.zeros((3, TotNx, TotNx))
+feq = np.zeros((Q, TotNx, TotNx))
+
 #initialization
-rho.fill(rho_ini)
+
 #setting u velocity to 1 and v velocity to zero
-vel[0,-1,:] = 1.0
-vel[1,:,:] = 0.0
+PrimVar[0, 1:-1, 1:-1] = rho_ini
+PrimVar[1, 1:-1, 1:-1] = u_ini
+PrimVar[2, 1:-1, 1:-1] = v_ini
+
 
 
 ######First iteration#####
-D2Q9.CalEqbDistrFun(rho, vel, Q, Lambda, feq)
-f.fill(1.0)
+D2Q9.CalEqbDistrFun(PrimVar, feq, c, w)
+Grid=feq
+Collision(beta, c, tau, Grid, PrimVar, feq)
+PrepareWall(Grid)
+Advection(Grid)
+BCs.WallBcOnGridBounceBack(Grid)
+BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
+BCs.BcOnCorners(Grid, feq)
 
-#CalEqbDistrFun(vel, Q, Lambda, feq)
-#
-#f = fnew
-#WallBcOnGridBounceBack(f)
-#MovingWallBcOnGridBounceBack(f,1.0)
-#fnew = f - (1/tau)*(f-feq)
-#GetDenFromFeq(feq)
-#GetVelFromFeq(feq, vel)
-#CalEqbDistrFun(vel, Q, Lambda, feq)
 
 iter=0
-while(iter<1):
-    iter = iter+1
-    print(iter)
-    
-    fnew = f - (1/tau)*(f-feq)
-    f = fnew
-    BCs.WallBcOnGridBounceBack(f)
-    BCs.MovingWallBcOnGridBounceBack(f,0.5)
-    D2Q9.GetDenFromFeq(feq)
-    D2Q9.GetVelFromFeq(feq, vel)
-    
+#while(iter<int(SimulTime)):
+#while(iter<int(10000)):
+#    iter = iter+1
+#    print(iter)
+#    
+#    Collision(beta, c, tau, Grid, PrimVar, feq)
+#    PrepareWall(Grid)
+#    Advection(Grid)
+#    BCs.WallBcOnGridBounceBack(Grid)
+#    BCs.MovingWallBcOnGridBounceBack(PrimVar, Grid, UtopWall, c, w, feq)
+#    BCs.BcOnCorners(Grid, feq)
+
+#to plot contours of normal velocity
+
+print (PrimVar[1, 1:-1, 1:-1], PrimVar[2, 1:-1, 1:-1])
+x = np.linspace(1, Nx, Nx)    
+y = np.linspace(1, Ny, Ny)    
+X, Y = np.meshgrid(x, y)
+VelNorm = np.sqrt(PrimVar[1, 1:-1, 1:-1]*PrimVar[1, 1:-1, 1:-1] + PrimVar[2, 1:-1, 
+                 1:-1]*PrimVar[2, 1:-1, 1:-1])
+cp=plt.contour(X, Y, VelNorm)
+plt.colorbar(cp)
     
