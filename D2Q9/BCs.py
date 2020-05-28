@@ -10,21 +10,21 @@ import D2Q9
 
 def PrepareWall(Grids):
    '''Values from interior domain are cop
-   ied to ghost nodes for applyging bound
+   ied to ghost nodes for applying bound
    ary conditions. So that we will have 
    some relevant values at the ghose poi
    nts'''
     #copy from right wall to the right ghost
-    Grids[:,-1,:] = Grids[:,-2,:]
+   Grids[:,-1,:] = Grids[:,-2,:]
     
     #copy from left wall to the left ghost
-    Grids[:,0,:] = Grids[:,1,:]
+   Grids[:,0,:] = Grids[:,1,:]
     
     #copy from bottom wall to the bottom ghost
-    Grids[:,:,-1] = Grids[:,:,-2]
+   Grids[:,:,-1] = Grids[:,:,-2]
     
     #copy from top wall to the top ghost
-    Grids[:,:,0] = Grids[:,:,1]
+   Grids[:,:,0] = Grids[:,:,1]
     
 def WallBcOnGridBounceBack(Grid):
     '''To apply wall boundary con
@@ -50,67 +50,105 @@ def MovingWallBcOnGridBounceBack(Uwall, Weights, PartVel, PrimVars, Grids):
     '''moving wall boundary conditions. Implemented from Q. Zou, X.He: Phy
     sc Fluids, 1997'''
     
-    #first set like a solid wall
-    Grids[4, 2:-2, -2] = Grids[2, 2:-2, -1]
-    Grids[8, 2:-2, -2] = Grids[6, 2:-2, -1]
-    Grids[7, 2:-2, -2] = Grids[5, 2:-2, -1]
+    # f[Ny][i][4] = f_post[Ny][i][2]
+    # f[Ny][i][7] = f_post[Ny][i][5] + 6.0 * rho[Ny][i] * w[7] * cx[7] * Uwall;
+    # f[Ny][i][8] = f_post[Ny][i][6] + 6.0 * rho[Ny][i] * w[8] * cx[8] * Uwall;
     
-    #now apply moving wall boundary conditions
-    PrimVarTemp = np.array([1, Uwall, 0])
+    Grids[4, 1:-1, -2] = Grids[2, 1:-1, -1]
+    Grids[7, 1:-1, -2] = Grids[5, 1:-1, -1] + 6.0*PrimVars[0, 1:-1, -1]*Weights[7]*PartVel[0][7]*Uwall
+    Grids[8, 1:-1, -2] = Grids[6, 1:-1, -1] + 6.0*PrimVars[0, 1:-1, -1]*Weights[8]*PartVel[0][8]*Uwall
     
-    feqTemp = np.zeros(9)
-    D2Q9.CalEqbDistrFun(PartVel, Weights, PrimVarTemp, feqTemp)
-    #print("priting in the BCs feq", feqTemp)
+    # #first set like a solid wall
+    # Grids[4, 2:-2, -2] = Grids[2, 2:-2, -1]
+    # Grids[8, 2:-2, -2] = Grids[6, 2:-2, -1]
+    # Grids[7, 2:-2, -2] = Grids[5, 2:-2, -1]
+    
+    # #now apply moving wall boundary conditions
+    # PrimVarTemp = np.array([1, Uwall, 0])
+    
+    # feqTemp = np.zeros(9)
+    # D2Q9.CalEqbDistrFun(PartVel, Weights, PrimVarTemp, feqTemp)
+    # #print("priting in the BCs feq", feqTemp)
 
-    denominator =1.0/(feqTemp[7]+feqTemp[4]+feqTemp[8])
+    # denominator =1.0/(feqTemp[7]+feqTemp[4]+feqTemp[8])
     
-    factor = Grids[2, 2:-2, -1] + Grids[6, 2:-2, -1] + Grids[5, 2:-2, -1]
+    # factor = Grids[2, 2:-2, -1] + Grids[6, 2:-2, -1] + Grids[5, 2:-2, -1]
     
-    Grids[4, 2:-2, -2] = factor*denominator*feqTemp[4]
-    Grids[8, 2:-2, -2] = factor*denominator*feqTemp[8]
-    Grids[7, 2:-2, -2] = factor*denominator*feqTemp[7]
-    #print(Grid)
+    # Grids[4, 2:-2, -2] = factor*denominator*feqTemp[4]
+    # Grids[8, 2:-2, -2] = factor*denominator*feqTemp[8]
+    # Grids[7, 2:-2, -2] = factor*denominator*feqTemp[7]
+    # #print(Grid)
     
-        #bottom left corner
-    Grids[2, 1, 1] = Grids[4, 1, 0]
-    Grids[5, 1, 1] = Grids[7, 1, 0]
-    Grids[1, 1, 1] = Grids[3, 1, 0]
-    Grids[8, 1, 1] = Grids[6, 1, 0]
-    Grids[6, 1, 1] = Grids[8, 1, 0]
+    #     # bottom left corner
+    # Grids[2, 1, 1] = Grids[4, 1, 0]
+    # Grids[5, 1, 1] = Grids[7, 1, 0]
+    # Grids[1, 1, 1] = Grids[3, 1, 0]
+    # Grids[8, 1, 1] = Grids[6, 1, 0]
+    # Grids[6, 1, 1] = Grids[8, 1, 0]
     
-    #bottom right corner
-    Grids[2, -2, 1] = Grids[4, -2, 0]
-    Grids[6, -2, 1] = Grids[8, -2, 0]
-    Grids[3, -2, 1] = Grids[1, -2, 0]
-    Grids[5, -2, 1] = Grids[7, -2, 0]
-    Grids[7, -2, 1] = Grids[5, -2, 0]
+    # #bottom right corner
+    # Grids[2, -2, 1] = Grids[4, -2, 0]
+    # Grids[6, -2, 1] = Grids[8, -2, 0]
+    # Grids[3, -2, 1] = Grids[1, -2, 0]
+    # Grids[5, -2, 1] = Grids[7, -2, 0]
+    # Grids[7, -2, 1] = Grids[5, -2, 0]
     
-    #top left corner
-    Grids[5, 1, -2] = Grids[7, 1, -1]
-    Grids[7, 1, -2] = Grids[5, 1, -1]
-    Grids[1, 1, -2] = Grids[3, 1, -1]
-    Grids[8, 1, -2] = Grids[6, 1, -1]
-    Grids[4, 1, -2] = Grids[2, 1, -1]
+    # #top left corner
+    # Grids[5, 1, -2] = Grids[7, 1, -1]
+    # Grids[7, 1, -2] = Grids[5, 1, -1]
+    # Grids[1, 1, -2] = Grids[3, 1, -1]
+    # Grids[8, 1, -2] = Grids[6, 1, -1]
+    # Grids[4, 1, -2] = Grids[2, 1, -1]
     
-    rhoTemp = 0
-    rhoTemp = sum(Grids[:,1,-2])
-    #print("rhoTemp=",rhoTemp)
-    Grids[:, 1, -2] = feqTemp*rhoTemp
+    # rhoTemp = 0
+    # rhoTemp = sum(Grids[:,1,-2])
+    # #print("rhoTemp=",rhoTemp)
+    # Grids[:, 1, -2] = feqTemp*rhoTemp
     
-    #top right corner
-    Grids[8, -2, -2] = Grids[6, -2, -1]
-    Grids[6, -2, -2] = Grids[8, -2, -1]
-    Grids[3, -2, -2] = Grids[1, -2, -1]
-    Grids[7, -2, -2] = Grids[5, -2, -1]
-    Grids[4, -2, -2] = Grids[2, -2, -1]
+    # #top right corner
+    # Grids[8, -2, -2] = Grids[6, -2, -1]
+    # Grids[6, -2, -2] = Grids[8, -2, -1]
+    # Grids[3, -2, -2] = Grids[1, -2, -1]
+    # Grids[7, -2, -2] = Grids[5, -2, -1]
+    # Grids[4, -2, -2] = Grids[2, -2, -1]
     
-    rhoTemp = 0
-    rhoTemp = sum(Grids[:,-2,-2])
-    Grids[:,-2, -2] = feqTemp*rhoTemp
-    
-    
+    # rhoTemp = 0
+    # rhoTemp = sum(Grids[:,-2,-2])
+    # Grids[:,-2, -2] = feqTemp*rhoTemp
     
     
+def bc_periodic_x(Grid):
+    '''To apply periodic BC in x-dir'''
+           
+    #left wall 
+    # Grid[1, -1, 1:-1] = Grid[1, 0, 1:-1]
+    # Grid[8, -1, 1:-1] = Grid[8, 0, 1:-1]
+    # Grid[5, -1, 1:-1] = Grid[5, 0, 1:-1]
+    
+    #left wall 
+    # Grid[6, 0, 1:-1] = Grid[6, -1, 1:-1]
+    # Grid[3, 0, 1:-1] = Grid[3, -1, 1:-1]
+    # Grid[7, 0, 1:-1] = Grid[7, -1, 1:-1]
+    
+    Grid[1, 0, 1:-1] = Grid[1, -1, 1:-1]
+    Grid[8, 0, 1:-1] = Grid[8, -1, 1:-1]
+    Grid[5, 0, 1:-1] = Grid[5, -1, 1:-1]
+    
+    Grid[6, -1, 1:-1] = Grid[6, 0, 1:-1]
+    Grid[3, -1, 1:-1] = Grid[3, 0, 1:-1]
+    Grid[7, -1, 1:-1] = Grid[7, 0, 1:-1]
+    
+    
+    
+        
+def bc_bounceBack_bottomWall(Grid):
+    '''To apply wall boundary con
+    ditions. Using bounce back method'''
+        
+    #bottom wall
+    Grid[2, 1:-1, 1] = Grid[4, 1:-1, 0]
+    Grid[6, 1:-1, 1] = Grid[8, 1:-1, 0]
+    Grid[5, 1:-1, 1] = Grid[7, 1:-1, 0]
     
     
     

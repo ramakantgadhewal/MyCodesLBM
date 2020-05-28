@@ -5,8 +5,8 @@ Created on Fri May 17 10:27:01 2019
 
 @author: maruthinh
 """
-
 import numpy as np
+import variable_prandtl as vp
 
 def CalEqbDistrFun(PartVel, Weights, PrimVars,  Feq):
     '''to compute distribution function. Takes parti
@@ -20,7 +20,8 @@ def CalEqbDistrFun(PartVel, Weights, PrimVars,  Feq):
        
         Feq[i] = Weights[i]*PrimVars[0]*(1.0 + 3.0*UdotC - 
            1.5*Usq + 4.5*UdotC**2 + 4.5*UdotC**3 - 4.5*Usq*UdotC )
-              
+
+     
 def GetMoments(PartVel, Grids, PrimVars):
     '''Get (rho, u, p) by taking moment
     of distribution fucntion. Takes part
@@ -35,9 +36,11 @@ def GetMoments(PartVel, Grids, PrimVars):
     for i in range(9):
         vel1+=Grids[i]*PartVel[0][i]
         vel2+=Grids[i]*PartVel[1][i]
- 
+    
     PrimVars[1] = vel1/PrimVars[0]
     PrimVars[2] = vel2/PrimVars[0]
+    
+    
     
 def Collision(Beta, PartVel, Weights, Tau, Grids, PrimVars, Feq):
     '''computes collision term of the LBM update 
@@ -45,8 +48,10 @@ def Collision(Beta, PartVel, Weights, Tau, Grids, PrimVars, Feq):
     es beta, Particle Vel, Weights, Grid, PrimVar
     and Feq as inputs. This gives updated Grid as
     output'''
-    GetMoments(PartVel, Grids, PrimVars)
+    # GetMoments(PartVel, Grids, PrimVars)
     CalEqbDistrFun(PartVel, Weights, PrimVars, Feq)
+    # vp.feq_iso(PartVel, Weights, PrimVars,  Feq)
+    # CalEqbDistrFun_Iso(PartVel, Weights, PrimVars, Feq)
     
     alpha = 2.0
     for i in range(9):
@@ -57,9 +62,9 @@ def Advection(Grids):
     '''
     len0, lenx, leny = np.shape(Grids)
     
-    for j in range(1, leny-1):
-        for i in range(1, lenx-1):
-            Grids[3, i, j] = Grids[3, i+1, j]        
+    for j in range(0, leny-1):
+        for i in range(0, lenx-1):
+            Grids[3, i, j] = Grids[3, i+1, j]         
             Grids[4, i, j] = Grids[4, i, j+1]        
             Grids[7, i, j] = Grids[7, i+1, j+1]        
             Grids[8, i, j] = Grids[8, i-1, j+1]        
